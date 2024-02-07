@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zaanse Schans Board Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f0f0f0;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+    }
+ 
+    h1 {
+      color: #0066cc; /* Zaanse Schans blue */
+    }
+ 
+    .welcome-page {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .welcome-page label {
+      margin-bottom: 10px;
+    }
+ 
+    #start-button {
+      font-size: 20px;
+      padding: 10px 20px;
+      background-color: #0066cc;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+ 
+    #start-button:hover {
+      background-color: #004080; /* Darker blue on hover */
+    }
+    
+    #game-container {
+      display: none;
+    }
+ 
+    #game-board {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 600px;
+      margin: 20px auto;
+    }
+
+    .cell {
+      box-sizing: border-box;
+      width: calc(100% / 6);
+      height: 50px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background-color: #fff;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .start, .finish {
+      background-color: #ff0000; /* Red for start, gray for finish */
+      color: #fff;
+    }
+
+    .finish {
+      background-color: #808080; /* Gray for finish */
+    }
+
+    .even {
+      background-color: #ccffcc; /* Light green for even numbers */
+    }
+
+    .odd {
+      background-color: #ffcccc; /* Light pink for odd numbers */
+    }
+
+    .active {
+      background-color: #8aff8a; /* Fresh green */
+    }
+
+    .player {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .player-1 {
+      background-color: #ffc107; /* Yellow for player 1 */
+    }
+
+    .player-2 {
+      background-color: #ff6384; /* Red for player 2 */
+    }
+
+    .player-3 {
+      background-color: #36a2eb; /* Blue for player 3 */
+    }
+
+    .player-4 {
+      background-color: #4bc0c0; /* Turquoise for player 4 */
+    }
+
+    .player-5 {
+      background-color: #ffcd56; /* Orange for player 5 */
+    }
+
+    .player-6 {
+      background-color: #9966ff; /* Purple for player 6 */
+    }
+
+    #dice {
+      font-size: 24px;
+      padding: 10px 20px;
+      margin-top: 20px;
+      background-color: #0066cc;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+
+    #dice:hover {
+      background-color: #004080; /* Darker blue on hover */
+    }
+
+    #result {
+      margin-top: 20px;
+      color: #0066cc;
+      text-align: left;
+      margin-left: 20px;
+    }
+
+    #virtual-dice {
+      font-size: 24px;
+      margin-top: 10px;
+      animation: roll 1s ease-in-out;
+    }
+
+    @keyframes roll {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+ 
+<div class="welcome-page">
+  <h1>Welcome to the Zaanse Schans Board Game</h1>
+  <label for="player-count">Number of Players:</label>
+  <select id="player-count">
+    <option value="2">2 players</option>
+    <option value="3">3 players</option>
+    <option value="4">4 players</option>
+    <option value="5">5 players</option>
+    <option value="6">6 players</option>
+  </select>
+  <button id="start-button" onclick="startGame()">Start the Game</button>
+</div>
+ 
+<div id="game-container">
+  <h1>Zaanse Schans Goose Board</h1>
+ 
+  <div id="players"></div>
+ 
+  <div id="game-board"></div>
+ 
+  <button id="dice" onclick="rollDice()">Roll the Dice</button>
+  <div id="virtual-dice"></div>
+ 
+  <div id="result"></div>
+  
+  <div id="rules">
+    <h2>Game Rules:</h2>
+    <p>The Zaanse Schans Board Game is played with a dice. Each player starts at the starting point. 
+    In each turn, a player rolls the dice and moves their pawn forward according to the number of eyes rolled. 
+    The first player to reach the finishing point wins the game.</p>
+  </div>
+</div>
+ 
+<script>
+  const boardSize = 30;
+  let playerCount;
+  let players;
+  let currentPlayer = 0;
+
+  function createBoard() {
+    const gameBoard = document.getElementById('game-board');
+    for (let i = 1; i <= boardSize; i++) {
+      const cell = document.createElement('div');
+      cell.classList.add('cell');
+      cell.textContent = i === 1 ? 'Start' : i;
+
+      if (i === boardSize) {
+        cell.classList.add('finish');
+        cell.textContent = 'Finish';
+      }
+
+      if (i % 2 === 0 && i !== 1 && i !== boardSize) {
+        cell.classList.add('even');
+      } else if (i % 2 !== 0 && i !== 1 && i !== boardSize) {
+        cell.classList.add('odd');
+      }
+
+      gameBoard.appendChild(cell);
+    }
+  }
+
+  function updatePlayerPosition() {
+    const cells = document.querySelectorAll('.cell');
+    cells.forEach(cell => cell.classList.remove('active', 'player'));
+    cells[players[currentPlayer].position - 1].classList.add('active', `player-${currentPlayer + 1}`);
+  }
+
+  function rollDice() {
+    document.getElementById('virtual-dice').textContent = '';
+    const rolls = 10; // Number of rolls
+    let rollCount = 0;
+
+    function roll() {
+      const diceResult = Math.floor(Math.random() * 6) + 1;
+      document.getElementById('virtual-dice').textContent = diceResult;
+      rollCount++;
+      if (rollCount < rolls) {
+        setTimeout(roll, 100); // Repeat every 100 milliseconds
+      } else {
+        players[currentPlayer].position += diceResult;
+
+        if (players[currentPlayer].position > boardSize) {
+          players[currentPlayer].position = boardSize - (players[currentPlayer].position - boardSize);
+        }
+
+        updatePlayerPosition();
+        document.getElementById('result').textContent = `Player ${currentPlayer + 1} rolled ${diceResult}.`;
+        checkWin();
+        currentPlayer = (currentPlayer + 1) % playerCount;
+        document.getElementById('players').textContent = `Current Player: ${currentPlayer + 1}`;
+      }
+    }
+
+    roll();
+  }
+
+  function checkWin() {
+    if (players[currentPlayer].position === boardSize) {
+      document.getElementById('result').textContent = `Congratulations! Player ${currentPlayer + 1} has won!`;
+      document.getElementById('dice').disabled = true;
+    }
+  }
+
+  function startGame() {
+    playerCount = parseInt(document.getElementById('player-count').value);
+    players = Array.from({ length: playerCount }, () => ({ position: 1 }));
+    document.querySelector('.welcome-page').style.display = 'none';
+    document.getElementById('game-container').style.display = 'block';
+    document.getElementById('players').textContent = `Current Player: 1`;
+    createBoard();
+    updatePlayerPosition();
+  }
+</script>
+ 
+</body>
+</html>
